@@ -182,17 +182,58 @@ class MotivData:
         ax.set_ylabel('kW')
         ax.set_xlabel('Timestamp')
         # Show only every 5th xtick and rotate xticks 90
+        ax.set_xticklabels(x, rotation=45, ha='right')
         tick_spacing = 15
         ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
-        ax.set_xticklabels(x, rotation=45, ha='right')
         return 
+    
+    def plot_calculated_total_facility_load(self, data, ax=None, **kwargs):
+        """
+        """
+        return
+
+    def plot_battery_capacity_over_time(self, data, ax=None, **kwargs):
+        """
+        Plot the battery capacity as well as charge/discharge signals. 
+        """
+        ax = ax or plt.gca()
+        x = [str(time) for time in data.index.time]
+        battery_capacity = data['Distributer1']
+        c_d_indicators = []
+        for ind in data['ChargeDischargeCounter']:
+            if ind[0] == 0 and ind[1] == 0:
+                c_d_indicators.append(0)
+            elif ind[0] == 1:
+                c_d_indicators.append(1)
+            else:
+                c_d_indicators.append(-1)
+        ax.plot(x, battery_capacity, label='Battery Capacity')
+        ax.set_ylabel('wH')
+        ax.set_xlabel('Timestamp')
+        # Show only every 5th xtick and rotate xticks 90
+        ax.set_xticklabels(x, rotation=45, ha='right')
+        tick_spacing = 15
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        return
+    
+    def plot_grid_measurements(self, data, ax=None, **kwargs):
+        """
+        MaxAvgGrid and 15MinGridAverager
+        """
+
     
     def visualize_data(self, data):
         """
         Run visualizations.
         """
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        # Plotting functions
         self.plot_synthetic_inputs(data, ax1)
+        self.plot_calculated_total_facility_load(data, ax2)
+        self.plot_battery_capacity_over_time(data, ax3)
+        self.plot_grid_measurements(data, ax3)
+
+
         plt.show()
 
             
@@ -210,23 +251,13 @@ if __name__ == "__main__":
 
     motiv_data.api_response_df.to_csv('mined_motiv_response.csv')
 
-    # TODO: join the synthetic data df's and the api processed data
-
     merged = pd.merge(motiv_data.synthetic_load_pv, motiv_data.api_response_df, how='inner', left_index=True, right_index=True)
     merged.to_csv("matched_system_response.csv")
 
     merged = merged[~merged.index.duplicated(keep='first')]
 
-    # # Check missing datetime values
-    # ipdb.set_trace()
-    # test = merged.reindex(pd.date_range(min(merged.index), max(merged.index)), fill_value="NaN")
-    # plt.plot(test.index.to_series())
-    # plt.show()
-
     # TODO: Figure out why there's a nan column called load after all this
     merged = merged.drop(['load'], axis=1)
-
-    # ipdb.set_trace()
 
     motiv_data.visualize_data(merged)
 
