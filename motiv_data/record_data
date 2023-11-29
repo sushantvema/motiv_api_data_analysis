@@ -1,0 +1,74 @@
+#! /usr/bin/env python
+
+"""Sample script to download data from the motiv database and stick it
+into a MongoDB database.
+"""
+
+__author__ = "nathan.addy@windfalltechnical.com"
+
+import os
+import json
+import datetime
+from memosa import config
+from argparse import ArgumentParser
+import requests
+import pprint
+from pymongo import MongoClient
+import time
+
+TELEMETRY_URI = "https://lineage.testmotiveenergy.com:8080/emsapi/v1.0/telemetry"
+
+
+def create_mongodb_connection():
+    # Assuming MongoDB is running on the default host and port
+    client = MongoClient('localhost', 27017)
+    # You could also use a URI to connect to a remote instance
+    # client = MongoClient('mongodb://username:password@host:port/')
+    return client
+
+
+def main():
+
+    conn = create_mongodb_connection()
+
+    site = config.get("motiv", "site")
+    xapikey = config.get("motiv", "x-api-key")
+
+    outdir = "/Users/naddy/Source/lineage/microgrid_project/memosa/bin/motiv/output"
+
+    while True:
+        print(f"Query at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+        resp = requests.get(TELEMETRY_URI, params={"site": site}, headers = {"x-api-key": xapikey})
+        assert resp.status_code == 200
+
+        data = resp.json()
+
+        document = {
+            'timestamp': datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            'api_response': data,
+        }
+
+        # print(data)
+
+        ts = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        with open(os.path.join(outdir, f"response_{ts}.txt"), 'w') as outfile:
+            outfile.write(json.dumps(document))
+
+        # dbname = 'motiv_db'
+        # collection_name = 'api_responses'
+
+        # #pprint.pprint(data)
+        # conn[dbname][collection_name].insert_one(document)
+
+        time.sleep(60)
+
+    return
+
+if __name__ == "__main__":
+
+    arg_parser = ArgumentParser()
+    # arg_parser.add_argument('-f', '--force', action='store_true', default=False)
+    args = arg_parser.parse_args()
+
+    main()
