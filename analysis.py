@@ -181,15 +181,28 @@ class MotivData:
         ax.legend()
         ax.set_ylabel('kW')
         ax.set_xlabel('Timestamp')
-        # Show only every 5th xtick and rotate xticks 90
+        # Show only every 15th xtick and rotate xticks
         ax.set_xticklabels(x, rotation=45, ha='right')
         tick_spacing = 15
         ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        ax.set_title('Random inputs to get API responses')
         return 
     
     def plot_calculated_total_facility_load(self, data, ax=None, **kwargs):
         """
+        Figure out what the total facility load is and plot it. Ideally with subsidiary
+        solar and battery contributions as well.
         """
+        ax = ax or plt.gca()
+        x = [str(time) for time in data.index.time]
+        # Might be the wrong number for facility load
+        facility_load = data['ArbiterPower']
+        ax.plot(x, facility_load, label='Synthetic Load')
+        # Show only every 15th xtick and rotate xticks
+        ax.set_xticklabels(x, rotation=45, ha='right')
+        tick_spacing = 15
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        ax.set_title('Calculated Facility Load Over Time + PV, ES')
         return
 
     def plot_battery_capacity_over_time(self, data, ax=None, **kwargs):
@@ -214,12 +227,16 @@ class MotivData:
         ax.set_xticklabels(x, rotation=45, ha='right')
         tick_spacing = 15
         ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        ax.set_title('Battery Capacity Over Time with Charge/Discharge Signals')
         return
     
     def plot_grid_measurements(self, data, ax=None, **kwargs):
         """
         MaxAvgGrid and 15MinGridAverager
         """
+        ax = ax or plt.gca()
+        x = [str(time) for time in data.index.time]
+        return
 
     
     def visualize_data(self, data):
