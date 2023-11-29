@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import os
 
 import dateparser
@@ -172,16 +173,25 @@ class MotivData:
         Plot the synthetic load and solar inputs.
         """
         ax = ax or plt.gca()
-        synthetic_load = data.synthetic_load
-        solar = data.pv
-        plt.plot()
+        x = [str(time) for time in data.index.time]
+        synthetic_load = data.synthetic_load / 1000
+        synthetic_pv = data.synthetic_pv / 1000
+        ax.plot(x, synthetic_load, label='Synthetic Load')
+        ax.plot(x, synthetic_pv, label='Synthetic PV')
+        ax.legend()
+        ax.set_ylabel('kW')
+        ax.set_xlabel('Timestamp')
+        # Show only every 5th xtick and rotate xticks 90
+        tick_spacing = 15
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        ax.set_xticklabels(x, rotation=45, ha='right')
         return 
     
     def visualize_data(self, data):
         """
         Run visualizations.
         """
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4)
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
         self.plot_synthetic_inputs(data, ax1)
         plt.show()
 
@@ -216,7 +226,7 @@ if __name__ == "__main__":
     # TODO: Figure out why there's a nan column called load after all this
     merged = merged.drop(['load'], axis=1)
 
-    ipdb.set_trace();
+    # ipdb.set_trace()
 
     motiv_data.visualize_data(merged)
 
