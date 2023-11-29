@@ -60,11 +60,11 @@ class MotivData:
                 case 'BatteryMeter':
                     row[variable] = [temp.get("ACPowerWattsSigned")]
                 case 'PrimaryGridMeter':
-                    row[variable] = ["ACPowerWattsSigned"]
+                    row[variable] = [temp.get("ACPowerWattsSigned")]
                 case 'ArbiterPower':
                     row[variable] = [temp.get('SystemDirectorPowerRequest')]
                 case 'PVChargeLimiter':
-                    row[variable] = ["PVChargeLimitWatts"]
+                    row[variable] = [temp.get("PVChargeLimitWatts")]
                 case 'PVMeter':
                     row[variable] = [temp.get('ACPowerWattsSigned')]
                 case 'Distributer1':
