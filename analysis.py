@@ -136,6 +136,7 @@ class MotivData:
                 load = load.rename(columns={'load' : "synthetic_load"})
             elif 'pv' in filepath:
                 pv = pd.read_csv(filepath, names=['timestamp', 'pv'])
+                pv = pv.rename(columns={'pv' : 'synthetic_pv'})
         merged = load.merge(pv)
 
         # Convert PST timestamp strings to UTC ISO-8601 format timestamp strings
@@ -167,7 +168,12 @@ class MotivData:
         return
 
     def plot_synthetic_inputs(self, data, ax=None, **kwargs):
+        """
+        Plot the synthetic load and solar inputs.
+        """
         ax = ax or plt.gca()
+        synthetic_load = data.synthetic_load
+        solar = data.pv
         plt.plot()
         return 
     
@@ -175,7 +181,7 @@ class MotivData:
         """
         Run visualizations.
         """
-        fig, (ax1, ax2) = plt.subplots(2)
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4)
         self.plot_synthetic_inputs(data, ax1)
         plt.show()
 
