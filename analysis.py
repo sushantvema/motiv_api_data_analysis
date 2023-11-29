@@ -90,7 +90,7 @@ class MotivData:
         
         row['matched_timestamp'] = time_temp
 
-        row['load'] = "WORK IN PROGRESS"
+        row['load_facility'] = "WORK IN PROGRESS"
         row['solar'] = api_response['PVMeter']['ACPowerWattsSigned']     
 
         self.api_response_df = pd.concat([
@@ -133,6 +133,7 @@ class MotivData:
             filepath = os.path.join(self.data_we_gave_to_motiv_path, filename)
             if 'load' in filepath:
                 load = pd.read_csv(filepath, names=['timestamp', 'load'])
+                load = load.rename(columns={'load' : "synthetic_load"})
             elif 'pv' in filepath:
                 pv = pd.read_csv(filepath, names=['timestamp', 'pv'])
         merged = load.merge(pv)
@@ -165,12 +166,18 @@ class MotivData:
 
         return
 
-    def visualize_data(self):
+    def plot_synthetic_inputs(self, data, ax=None, **kwargs):
+        ax = ax or plt.gca()
+        plt.plot()
+        return 
+    
+    def visualize_data(self, data):
         """
         Run visualizations.
         """
-
-
+        fig, (ax1, ax2) = plt.subplots(2)
+        self.plot_synthetic_inputs(data, ax1)
+        plt.show()
 
             
         
@@ -199,6 +206,12 @@ if __name__ == "__main__":
     # test = merged.reindex(pd.date_range(min(merged.index), max(merged.index)), fill_value="NaN")
     # plt.plot(test.index.to_series())
     # plt.show()
-    
+
+    # TODO: Figure out why there's a nan column called load after all this
+    merged = merged.drop(['load'], axis=1)
+
+    ipdb.set_trace();
+
+    motiv_data.visualize_data(merged)
 
 
