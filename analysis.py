@@ -168,11 +168,13 @@ class MotivData:
 
         return
 
-    def plot_synthetic_inputs(self, data, ax=None, **kwargs):
+    def plot_synthetic_inputs(self, ax=None, **kwargs):
         """
         Plot the synthetic load and solar inputs.
         """
         ax = ax or plt.gca()
+        data = self.synthetic_load_pv
+
         x = [str(time) for time in data.index.time]
         synthetic_load = data.synthetic_load / 1000
         synthetic_pv = data.synthetic_pv / 1000
@@ -188,16 +190,19 @@ class MotivData:
         ax.set_title('Random inputs to get API responses')
         return 
     
-    def plot_calculated_total_facility_load(self, data, ax=None, **kwargs):
+    def plot_calculated_total_facility_load(self, ax=None, **kwargs):
         """
         Figure out what the total facility load is and plot it. Ideally with subsidiary
         solar and battery contributions as well.
         """
         ax = ax or plt.gca()
+        data = self.api_response_df
+
         x = [str(time) for time in data.index.time]
         # Might be the wrong number for facility load
         facility_load = data['ArbiterPower']
-        ax.plot(x, facility_load, label='Synthetic Load')
+        ax.plot(x, facility_load, label='Synthetic Load (ArbiterPower)')
+        ax.legend()
         # Show only every 15th xtick and rotate xticks
         ax.set_xticklabels(x, rotation=45, ha='right')
         tick_spacing = 15
@@ -205,11 +210,13 @@ class MotivData:
         ax.set_title('Calculated Facility Load Over Time + PV, ES')
         return
 
-    def plot_battery_capacity_over_time(self, data, ax=None, **kwargs):
+    def plot_battery_capacity_over_time(self, ax=None, **kwargs):
         """
         Plot the battery capacity as well as charge/discharge signals. 
         """
         ax = ax or plt.gca()
+        data = self.api_response_df
+
         x = [str(time) for time in data.index.time]
         battery_capacity = data['Distributer1']
         c_d_indicators = []
@@ -230,25 +237,29 @@ class MotivData:
         ax.set_title('Battery Capacity Over Time with Charge/Discharge Signals')
         return
     
-    def plot_grid_measurements(self, data, ax=None, **kwargs):
+    def plot_grid_measurements(self, ax=None, **kwargs):
         """
         MaxAvgGrid and 15MinGridAverager
         """
         ax = ax or plt.gca()
+        data = self.api_response_df
+
         x = [str(time) for time in data.index.time]
         return
 
     
-    def visualize_data(self, data):
+    def visualize_data(self):
         """
         Run visualizations.
         """
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        fig.tight_layout()
+        plt.subplots_adjust(hspace=0.5)
         # Plotting functions
-        self.plot_synthetic_inputs(data, ax1)
-        self.plot_calculated_total_facility_load(data, ax2)
-        self.plot_battery_capacity_over_time(data, ax3)
-        self.plot_grid_measurements(data, ax3)
+        self.plot_synthetic_inputs(ax1)
+        self.plot_calculated_total_facility_load(ax2)
+        self.plot_battery_capacity_over_time(ax3)
+        self.plot_grid_measurements(ax3)
 
 
         plt.show()
@@ -268,17 +279,7 @@ if __name__ == "__main__":
 
     motiv_data.api_response_df.to_csv('mined_motiv_response.csv')
 
-    merged = pd.merge(motiv_data.synthetic_load_pv, motiv_data.api_response_df, how='inner', left_index=True, right_index=True)
-    merged.to_csv("matched_system_response.csv")
-
-    # There's one duplicated timestamp for some reason. Get rid of 'er
-    merged = merged[~merged.index.duplicated(keep='first')]
-
-    # TODO: Figure out why there's a nan column called load after all this
-    merged = merged.drop(['load'], axis=1)
-
-    ipdb.set_trace()
-    motiv_data.visualize_data(merged)
+    motiv_data.visualize_data()
 
     ipdb.set_trace()
 
