@@ -3,9 +3,11 @@ from dateutil import parser as par
 import datetime as dt
 import json
 import pandas as pd
+from pandas import Grouper
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.dates as mdates
 import os
 
 import dateparser
@@ -175,19 +177,17 @@ class MotivData:
         ax = ax or plt.gca()
         data = self.synthetic_load_pv
 
-        x = [str(time) for time in data.index.time]
+        x = data.index
         synthetic_load = data.synthetic_load / 1000
         synthetic_pv = data.synthetic_pv / 1000
         ax.plot(x, synthetic_load, label='Synthetic Load')
         ax.plot(x, synthetic_pv, label='Synthetic PV')
-        ax.legend()
-        ax.set_ylabel('kW')
-        ax.set_xlabel('Timestamp')
-        # Show only every 15th xtick and rotate xticks
-        ax.set_xticklabels(x, rotation=45, ha='right')
-        tick_spacing = 15
-        ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+
+        # Plot metadata
         ax.set_title('Random inputs to get API responses')
+        ax.set_xlabel('Timestamp')
+        ax.set_ylabel('kW')
+        ax.legend()
         return 
     
     def plot_calculated_total_facility_load(self, ax=None, **kwargs):
@@ -197,17 +197,21 @@ class MotivData:
         """
         ax = ax or plt.gca()
         data = self.api_response_df
+        x = data.index
 
-        x = [str(time) for time in data.index.time]
-        # Might be the wrong number for facility load
         facility_load = data['ArbiterPower']
-        ax.plot(x, facility_load, label='Synthetic Load (ArbiterPower)')
-        ax.legend()
-        # Show only every 15th xtick and rotate xticks
-        ax.set_xticklabels(x, rotation=45, ha='right')
-        tick_spacing = 15
-        ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        facility_pv = data['PVMeter']
+        facility_battery = data['BatteryMeter']
+        
+        ax.plot(x, facility_load, label='Synthetic Load (ArbiterPower.SystemDirectorPowerRequest)')
+        ax.plot(x, facility_pv, label='PV Generation (PVMeter.ACPowerWattsSigned)')
+        ax.plot(x, facility_battery, label='Battery Contribution (BatteryMeter.AcPowerWattsSigned)')
+
+        # Plot metadata
         ax.set_title('Calculated Facility Load Over Time + PV, ES')
+        ax.set_xlabel('Timestamp')
+        ax.set_ylabel('kW')
+        ax.legend()
         return
 
     def plot_battery_capacity_over_time(self, ax=None, **kwargs):
@@ -216,8 +220,8 @@ class MotivData:
         """
         ax = ax or plt.gca()
         data = self.api_response_df
+        x = data.index
 
-        x = [str(time) for time in data.index.time]
         battery_capacity = data['Distributer1']
         c_d_indicators = []
         for ind in data['ChargeDischargeCounter']:
@@ -227,14 +231,17 @@ class MotivData:
                 c_d_indicators.append(1)
             else:
                 c_d_indicators.append(-1)
-        ax.plot(x, battery_capacity, label='Battery Capacity')
-        ax.set_ylabel('wH')
-        ax.set_xlabel('Timestamp')
-        # Show only every 5th xtick and rotate xticks 90
-        ax.set_xticklabels(x, rotation=45, ha='right')
-        tick_spacing = 15
-        ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+
+        ax.plot(x, battery_capacity, label='Battery Capacity (Distributer1.AvailableCapacityWattHours)')
+        ax2 = ax.twinx()
+        ax2.plot(x, c_d_indicators, label='Battery Charging Indicator', color='red')
+        
+        # Plot metadata
         ax.set_title('Battery Capacity Over Time with Charge/Discharge Signals')
+        ax.set_xlabel('Timestamp')
+        ax.set_ylabel('wH')
+        ax.legend()
+        ax2.legend()
         return
     
     def plot_grid_measurements(self, ax=None, **kwargs):
@@ -244,7 +251,19 @@ class MotivData:
         ax = ax or plt.gca()
         data = self.api_response_df
 
-        x = [str(time) for time in data.index.time]
+        x = data.index
+
+        max_avg_grid = data['MaxAvgGrid']
+        fifteen_min_grid_averager = data['15MinGridAverager']
+
+        ax.plot(x, max_avg_grid, label='(MaxAvgGrid.MaxAvg)')
+        ax.plot(x, fifteen_min_grid_averager, label='(15MinGridAverager.Averager)')
+
+        # Plot metadata
+        ax.set_title('Grid Information')
+        ax.set_xlabel('Timestamp')
+        ax.set_label('kW')
+        ax.legend()
         return
 
     
@@ -254,13 +273,30 @@ class MotivData:
         """
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
         fig.tight_layout()
-        plt.subplots_adjust(hspace=0.5)
-        # Plotting functions
+        plt.subplots_adjust(hspace=0.7, bottom=0.2)
+        
+        # Run plots
         self.plot_synthetic_inputs(ax1)
         self.plot_calculated_total_facility_load(ax2)
         self.plot_battery_capacity_over_time(ax3)
-        self.plot_grid_measurements(ax3)
+        self.plot_grid_measurements(ax4)
 
+        # Rotate x-tick labels for all subplots
+        for ax in [ax1, ax2, ax3, ax4]:
+            ax.set_xticks(ax.get_xticks())  # This line is necessary to get the current tick positions
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45)  # Adjust the rotation angle as needed
+
+        # Set the x-tick labels as datetime objects
+        for ax in [ax1, ax2, ax3, ax4]:
+            ax.xaxis.set_major_locator(mdates.HourLocator())  # Adjust the locator as needed
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M:%S'))  # Adjust the format as needed
+
+        # # Show only every 15th x-tick label
+        # for ax in [ax1, ax2, ax3, ax4]:
+        #     for label in ax.get_xticklabels():
+        #         label.set_visible(False)
+        #     for label in ax.get_xticklabels()[::1]:
+        #         label.set_visible(True)
 
         plt.show()
 
@@ -280,6 +316,4 @@ if __name__ == "__main__":
     motiv_data.api_response_df.to_csv('mined_motiv_response.csv')
 
     motiv_data.visualize_data()
-
-    ipdb.set_trace()
 
