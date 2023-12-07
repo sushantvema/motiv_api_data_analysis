@@ -87,7 +87,7 @@ class MotivData:
         time_temp = time_temp - dt.timedelta(minutes=time_temp.minute % 1,
                              seconds=time_temp.second,
                              microseconds=time_temp.microsecond)
-        time_temp = time_temp.strftime('%Y-%m-%dT%H:%M:%S.%fZ').split("T")[1]
+        time_temp = " ".join(time_temp.strftime('%Y-%m-%dT%H:%M:%S.%fZ').split("T"))
         
         row['matched_timestamp'] = time_temp
 
@@ -271,11 +271,14 @@ if __name__ == "__main__":
     merged = pd.merge(motiv_data.synthetic_load_pv, motiv_data.api_response_df, how='inner', left_index=True, right_index=True)
     merged.to_csv("matched_system_response.csv")
 
+    # There's one duplicated timestamp for some reason. Get rid of 'er
     merged = merged[~merged.index.duplicated(keep='first')]
 
     # TODO: Figure out why there's a nan column called load after all this
     merged = merged.drop(['load'], axis=1)
 
+    ipdb.set_trace()
     motiv_data.visualize_data(merged)
 
+    ipdb.set_trace()
 
