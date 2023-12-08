@@ -203,7 +203,7 @@ class MotivData:
         facility_pv = data['PVMeter']
         facility_battery = data['BatteryMeter']
         
-        ax.plot(x, facility_load, label='Synthetic Load (ArbiterPower.SystemDirectorPowerRequest)')
+        ax.plot(x, facility_load, label='Facility Load (ArbiterPower.SystemDirectorPowerRequest)')
         ax.plot(x, facility_pv, label='PV Generation (PVMeter.ACPowerWattsSigned)')
         ax.plot(x, facility_battery, label='Battery Contribution (BatteryMeter.AcPowerWattsSigned)')
 
@@ -224,23 +224,27 @@ class MotivData:
 
         battery_capacity = data['Distributer1']
         c_d_indicators = []
+        ipdb.set_trace()
         for ind in data['ChargeDischargeCounter']:
+            ind = eval(ind)
             if ind[0] == 0 and ind[1] == 0:
                 c_d_indicators.append(0)
             elif ind[0] == 1:
                 c_d_indicators.append(1)
             else:
                 c_d_indicators.append(-1)
+        state_of_charge = data['GEM100'] / 100
 
         ax.plot(x, battery_capacity, label='Battery Capacity (Distributer1.AvailableCapacityWattHours)')
         ax2 = ax.twinx()
         ax2.plot(x, c_d_indicators, label='Battery Charging Indicator', color='red')
+        ax2.plot(x, state_of_charge, label='SoC % (GEM100.StateOfCharge)', color='green')
         
         # Plot metadata
         ax.set_title('Battery Capacity Over Time with Charge/Discharge Signals')
         ax.set_xlabel('Timestamp')
         ax.set_ylabel('wH')
-        ax.legend()
+        ax.legend(loc='upper left')
         ax2.legend()
         return
     
